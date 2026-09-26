@@ -6,7 +6,4 @@ package tools
 
 import (
 	_ "github.com/gopherjs/gopherjs/js"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "gorm.io/driver/sqlite"
-	_ "gorm.io/gorm"
 )

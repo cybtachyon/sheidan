@@ -1,3 +1,5 @@
+codeberg.org/morelj/gorm-sqlite-libsql v1.6.0 h1:qOv68yGQWqOo73v1l1uKR/NRT8FSinE2fR67GVCVfeU=
+codeberg.org/morelj/gorm-sqlite-libsql v1.6.0/go.mod h1:ghgbzwuL59Ch3Vn6RaXeIbiWRJ6V0N9XgdN8TNv5//I=
 github.com/a-h/templ v0.3.1020 h1:ypAT/L5ySWEnZ6Zft/5yfoWXYYkhFNvEFOeeqecg4tw=
 github.com/a-h/templ v0.3.1020/go.mod h1:A2DlK61v+K+NRoGnhmYbNYVmtYHcFO5/AisMvBdDxTM=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
