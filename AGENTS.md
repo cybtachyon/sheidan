@@ -18,7 +18,7 @@
 - When implementing, do not rely on memory. Instead, look up the tool's documentation for the version being implemented or use online resources to ensure accuracy and reliability.
 - Read structs and types before calling with the `codegraph` tool e.g., `codegraph node structName`.
 - Use unit tests to answer questions, verify code, and test functionality.
-- GopherJS client code: the js package (v1.21.0) has no js.Value interface; use *js.Object. The stdlib http client rejects relative URLs, so resolve paths against location.origin. Under Node, Go 1.21 disables the fetch transport (go.dev/issue/57613) and the net package is a fake network, so HTTP requests only complete in a real browser; test response handling separately. A *js.Object holding JavaScript null compares equal to nil (the package has no IsNull), so check a querySelector result with == nil.
+- GopherJS client code: the js package (v1.21.0) has no js.Value interface; use *js.Object. The stdlib http client rejects relative URLs, so resolve paths against location.origin. Under Node, Go 1.21 disables the fetch transport (go.dev/issue/57613) and the net package is a fake network, so HTTP requests only complete in a real browser; test response handling separately. A *js.Object holding JavaScript null compares equal to nil (the package has no IsNull), so check a querySelector result with == nil. js.Object.Set and Get take string keys, so build indexed JS objects with string indices (list.Set("0", el), list.Set("length", n)); querySelectorAll returns a static list, so removing elements while iterating is safe.
 - Do not put secrets or personal data in content files.
 
 ## Tooling
