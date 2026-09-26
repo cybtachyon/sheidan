@@ -4,6 +4,30 @@ It's open-source and designed for building to an insane scale insanely quick. Dr
 
 The full stack is written in golang, with front-end components transpiled to JavaScript in a Vue-like MVVC progressive web app pattern.
 
+## Usage
+
+A Sheidan app is a Go module that requires `github.com/cybtachyon/sheidan`:
+
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/cybtachyon/sheidan"
+)
+
+func main() {
+	engine := sheidan.New()
+	engine.GET("/", sheidan.Wrap(Home()))
+	if err := engine.Run(":8080"); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+`New` creates a Gin engine preconfigured for a Sheidan app. `Wrap` adapts a templ component to a Gin handler. See [test/hello](test/hello) for a complete example.
+
 # @todo Rewrite this README. Design notes:
 
 - Decoupled front-end built around [Templ](https://github.com/a-h/templ) templates with components transpiled with (GopherJS)[https://github.com/gopherjs/gopherjs].

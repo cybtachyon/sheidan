@@ -8,6 +8,9 @@
 # Compiled project binary
 /sheidan
 
+# Compiled test app binary
+/test/hello/hello
+
 # Test binary, built with `go test -c`
 *.test
 

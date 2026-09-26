@@ -1,4 +1,4 @@
-// The sheidan binary serves the Sheidan demo app: a templ-rendered
+// The sheidan command serves the Sheidan demo app: a templ-rendered
 // home page and a notes API backed by GORM.
 package main
 
@@ -6,12 +6,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/a-h/templ"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-
+	"github.com/cybtachyon/sheidan"
 	"github.com/cybtachyon/sheidan/internal/db"
 	"github.com/cybtachyon/sheidan/internal/models"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -27,12 +26,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	engine := gin.Default()
-	// Disable trusted proxy parsing for the local dev server.
-	if err := engine.SetTrustedProxies(nil); err != nil {
-		log.Fatal(err)
-	}
-	engine.GET("/", gin.WrapH(templ.Handler(Home())))
+	engine := sheidan.New()
+	engine.GET("/", sheidan.Wrap(Home()))
 	engine.GET("/notes", listNotes(database))
 	if err := engine.Run(":8080"); err != nil {
 		log.Fatal(err)
