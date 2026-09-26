@@ -1,0 +1,2 @@
+- Created README.md and AGENTS.md describing the basics of the project.
+- Updated STATUS.md to include ongoing development progress.

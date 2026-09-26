@@ -1,0 +1,1 @@
+I need to fetch the dependencies listed in [README.md](README.md) and ensure a Hello Word build is working.

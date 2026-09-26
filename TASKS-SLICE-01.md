@@ -1,0 +1,1 @@
+I need to read [README.md](README.md) and [STATUS.md](STATUS.md), then create additional TASKS-SLICE-##.md files as needed to plan the design of this project.
