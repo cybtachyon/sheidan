@@ -44,6 +44,7 @@ func newNoteServer(t *testing.T, name string) (*gin.Engine, *gorm.DB, models.Not
 	engine.GET("/notes", listNotes(database))
 	engine.POST("/notes", createNote(database))
 	engine.PATCH("/note/:id", updateNote(database))
+	engine.DELETE("/note/:id", deleteNote(database))
 	return engine, database, note
 }
 
@@ -155,6 +156,61 @@ func TestCreateNote(t *testing.T) {
 	}
 	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
 		t.Errorf("400 Content-Type = %q; want it to contain %q", got, "application/json")
+	}
+}
+
+// TestDeleteNote verifies that deleteNote removes the note through
+// GORM and responds with status 204 and no body on success, status 404
+// for a missing note, and status 400 for a malformed ID. This is the
+// contract the web client's delete button relies on: it sends a DELETE
+// request, expects status 204, and removes the note's rows on success.
+func TestDeleteNote(t *testing.T) {
+	engine, database, note := newNoteServer(t, "delete-note")
+
+	// Missing note: status 404 with a JSON error body.
+	request := httptest.NewRequest(http.MethodDelete, "/note/999999", nil)
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("DELETE /note/999999 status = %d; want %d", w.Code, http.StatusNotFound)
+	}
+	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
+		t.Errorf("404 Content-Type = %q; want it to contain %q", got, "application/json")
+	}
+
+	// Malformed ID: status 400 with a JSON error body.
+	request = httptest.NewRequest(http.MethodDelete, "/note/notanumber", nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("DELETE /note/notanumber status = %d; want %d", w.Code, http.StatusBadRequest)
+	}
+	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
+		t.Errorf("400 Content-Type = %q; want it to contain %q", got, "application/json")
+	}
+
+	// Valid deletion: status 204 with no body, and the note is gone.
+	request = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/note/%d", note.ID), nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("DELETE /note/%d status = %d; want %d", note.ID, w.Code, http.StatusNoContent)
+	}
+	if w.Body.Len() != 0 {
+		t.Errorf("204 body = %q; want it empty", w.Body.String())
+	}
+	var got models.Note
+	err := database.First(&got, note.ID).Error
+	if err == nil {
+		t.Fatalf("First after delete succeeded; want the note gone")
+	}
+
+	// A second delete of the same note reports it missing: status 404.
+	request = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/note/%d", note.ID), nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("second DELETE /note/%d status = %d; want %d", note.ID, w.Code, http.StatusNotFound)
 	}
 }
 

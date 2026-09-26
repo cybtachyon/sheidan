@@ -2,13 +2,15 @@
 // With no argument it serves the demo app: a templ-rendered home page,
 // a notes list that content-negotiates between the NotesView page and
 // JSON, a note page rendered through the Bind data-binding layer,
-// GopherJS-transpiled editable fields and a new-note form on the notes
-// list page, and note create and update endpoints, all backed by GORM.
+// GopherJS-transpiled editable fields, a new-note form, and a delete
+// button on the notes list page, and note create, update, and delete
+// endpoints, all backed by GORM.
 // The web subcommand transpiles the GopherJS web client, and test-web
 // runs the web client's tests.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -96,6 +98,7 @@ func runApp() {
 	engine.POST("/notes", createNote(database))
 	engine.GET("/note/:id", showNote(database))
 	engine.PATCH("/note/:id", updateNote(database))
+	engine.DELETE("/note/:id", deleteNote(database))
 	// The GopherJS build output of the web client, produced by the
 	// bootstrap above.
 	engine.StaticFile("/web/web.js", "./web/web.js")
@@ -205,5 +208,33 @@ func updateNote(database *gorm.DB) gin.HandlerFunc {
 			return
 		}
 		c.JSON(200, note)
+	}
+}
+
+// deleteNote deletes a note by its route parameter, through GORM. A
+// successful deletion responds with status 204 and no body. A missing
+// note responds with status 404, a malformed ID with status 400, and
+// other errors with status 500.
+func deleteNote(database *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		var note models.Note
+		if err := database.First(&note, id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(404, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		if err := database.Delete(&note).Error; err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.Status(204)
 	}
 }
