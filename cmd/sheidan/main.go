@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/cybtachyon/sheidan"
-	"github.com/cybtachyon/sheidan/internal/db"
+	"github.com/cybtachyon/sheidan/db"
 	"github.com/cybtachyon/sheidan/internal/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

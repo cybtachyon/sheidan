@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cybtachyon/sheidan/internal/db"
+	"github.com/cybtachyon/sheidan/db"
 	"github.com/cybtachyon/sheidan/internal/models"
 	"gorm.io/gorm"
 )
