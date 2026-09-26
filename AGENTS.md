@@ -5,7 +5,6 @@
 ## Layout
 - The root package is the public framework API (package sheidan): New, Wrap, and Bind. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app and its CLI are in cmd/sheidan.
 - cmd/sheidan is the demo app and its CLI. With no argument it serves the demo app; the web subcommand transpiles the GopherJS client, and test-web runs the client's tests. It installs as the sheidan command.
-- cmd/sheidan/web is a nested GopherJS client module (go 1.21, the version GopherJS 1.21.0 requires). The root's ./... patterns skip it.
 - webbuild/ is the self-bootstrapping GopherJS toolchain, reusable by any app with a GopherJS client. Build(dir, out) transpiles the client in dir to out, provisioning a Go 1.21 SDK (in the user cache) and a gopherjs CLI on first use. Test(dir) runs the client's tests.
 - test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory.
 - cmd/sheidan/web is a nested GopherJS client module (go 1.21, the version GopherJS 1.21.0 requires). The root's ./... patterns skip it. Build with `make web`, test with `make test-web`.
@@ -19,7 +18,7 @@
 - When implementing, do not rely on memory. Instead, look up the tool's documentation for the version being implemented or use online resources to ensure accuracy and reliability.
 - Read structs and types before calling with the `codegraph` tool e.g., `codegraph node structName`.
 - Use unit tests to answer questions, verify code, and test functionality.
-- GopherJS client code: the js package (v1.21.0) has no js.Value interface; use *js.Object. The stdlib http client rejects relative URLs, so resolve paths against location.origin. Under Node, Go 1.21 disables the fetch transport (go.dev/issue/57613) and the net package is a fake network, so HTTP requests only complete in a real browser; test response handling separately.
+- GopherJS client code: the js package (v1.21.0) has no js.Value interface; use *js.Object. The stdlib http client rejects relative URLs, so resolve paths against location.origin. Under Node, Go 1.21 disables the fetch transport (go.dev/issue/57613) and the net package is a fake network, so HTTP requests only complete in a real browser; test response handling separately. A *js.Object holding JavaScript null compares equal to nil (the package has no IsNull), so check a querySelector result with == nil.
 - Do not put secrets or personal data in content files.
 
 ## Tooling
