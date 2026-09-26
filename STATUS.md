@@ -1,2 +1,2 @@
-- Created README.md and AGENTS.md describing the basics of the project.
-- Updated STATUS.md to include ongoing development progress.
+- Slices 01-02 done: project scaffolding (README, AGENTS), fetched the stack deps (gin, templ, gorm, gorm/sqlite, libsql/turso, gopherjs), and a verified gin+templ Hello World build (go build/vet/staticcheck/test + curl). Dev tools (air, templ, gopherjs) pinned in mise.toml.
+- Next (slice 03): database layer, GORM + SQLite/Turso driver, a sample model, and a unit test.

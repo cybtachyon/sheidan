@@ -12,6 +12,11 @@
 - Use unit tests to answer questions, verify code, and test functionality.
 - Do not put secrets or personal data in content files.
 
+## Tooling
+- templ: The CLI version must match the templ library version in go.mod. The CLI is pinned in mise.toml via the `go:` backend. Run `templ generate` after editing a `.templ` file, and commit the generated `*_templ.go` files.
+- DCDC: A Rust CLI, not a Go module, and not in the standard mise/aqua registry. Install it via its install script or a local mise plugin.
+- The gorm sqlite driver is cgo (mattn/go-sqlite3).
+
 # Code Style
 - Use a declarative and explicit coding style. Ensure single sources of truth and use language mechanics for deterministic behavior. Use tools like Structs, Reciever Functions, and Interfaces if they fit the problem.
 - Organize code by dependency, grouping by constructor and component usage. Prefer `internal/` packages to keep code DRY and avoid reinventing the wheel.
@@ -40,4 +45,4 @@
 ## Ongoing Development
 - Design next steps as the smallest unit of actionable items with a concrete goal, then write them into [TASKS-SLICE-##.md](TASKS-SLICE-##.md). Add, commit separately, then remove any task slices that have been completed, as they will be retained via Git History.
 - Track progress in [STATUS.md](STATUS.md). Compact it after every update.
-- As the last step, update [AGENT.md](AGENT.md) with any learnings and garbage collect (delete) wasteful verbiage and tokens to keep the file lean.
+- As the last step, update [AGENTS.md](AGENTS.md) with any learnings and garbage collect (delete) wasteful verbiage and tokens to keep the file lean.
