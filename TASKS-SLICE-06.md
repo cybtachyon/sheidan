@@ -1,0 +1,1 @@
+Add a public Bind function to the sheidan package that connects a GORM model load to a templ component render, producing a Gin handler. This is the first piece of the ViewModel data-binding layer that ties the Model (GORM) and View (templ) layers together.
