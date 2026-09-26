@@ -1,0 +1,18 @@
+package main
+
+import "github.com/cybtachyon/sheidan/internal/models"
+
+templ NoteView(note models.Note) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ note.Title }</title>
+		</head>
+		<body>
+			<h1>{ note.Title }</h1>
+			<p>{ note.Body }</p>
+		</body>
+	</html>
+}
