@@ -2,6 +2,9 @@ package main
 
 import "github.com/cybtachyon/sheidan/internal/models"
 
+// NoteView renders the note detail page: a back link to the notes list,
+// and the note's title and body as sf-field editable fields, so the
+// GopherJS client makes them inline editable.
 templ NoteView(note models.Note) {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -12,6 +15,7 @@ templ NoteView(note models.Note) {
 			@FieldStyles()
 		</head>
 		<body>
+			<p><a href="/notes">Back to notes</a></p>
 			<h1 class="sf-field" data-note-id={ note.ID } data-field="title"><span class="sf-value">{ note.Title }</span></h1>
 			<p class="sf-field" data-note-id={ note.ID } data-field="body"><span class="sf-value">{ note.Body }</span></p>
 			<script src="/web/web.js"></script>

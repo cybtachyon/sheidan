@@ -42,6 +42,25 @@ import + `go run`. First run takes a few minutes; later runs are instant.
 Front-end developers can transpile the client alone with `sheidan web`, a
 fast transpile-only build.
 
+## Notes demo
+
+The demo app in [cmd/sheidan](cmd/sheidan) shows the full stack: a
+templ-rendered notes list and note detail page, GORM-backed create,
+update, and delete endpoints, and a GopherJS client that makes the
+fields inline editable, adds a new-note form, and adds a delete button.
+Run it with:
+
+```
+go run ./cmd/sheidan
+```
+
+Then open http://localhost:8080/notes. Each note's title links to its
+detail page, and a back link on the detail page returns to the list.
+Hover a field for its edit and delete buttons. The first run
+provisions the GopherJS toolchain, so it takes a few minutes; later
+runs start in seconds. The app stores notes in `data/sheidan.db` by
+default, or in the DSN named by the `SHEIDAN_DB` environment variable.
+
 ## Database
 
 Sheidan uses the GORM SQLite driver and treats [Turso](https://turso.tech)

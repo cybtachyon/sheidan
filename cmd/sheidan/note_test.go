@@ -214,8 +214,9 @@ func TestDeleteNote(t *testing.T) {
 	}
 }
 
-// TestNoteView verifies that the note page marks its title and body
-// as editable fields and loads the GopherJS client.
+// TestNoteView verifies that the note page links back to the notes
+// list, marks its title and body as editable fields, and loads the
+// GopherJS client.
 func TestNoteView(t *testing.T) {
 	var buf bytes.Buffer
 	err := NoteView(models.Note{ID: 7, Title: "Hello", Body: "World"}).Render(context.Background(), &buf)
@@ -224,6 +225,7 @@ func TestNoteView(t *testing.T) {
 	}
 	body := buf.String()
 	for _, want := range []string{
+		`<p><a href="/notes">Back to notes</a></p>`,
 		`<h1 class="sf-field" data-note-id="7" data-field="title"><span class="sf-value">Hello</span></h1>`,
 		`<p class="sf-field" data-note-id="7" data-field="body"><span class="sf-value">World</span></p>`,
 		`<script src="/web/web.js"></script>`,

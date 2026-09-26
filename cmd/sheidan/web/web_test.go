@@ -45,6 +45,40 @@ func TestEnterEdit(t *testing.T) {
 	}
 }
 
+// TestNewFieldWithViewAnchor verifies that NewField finds the value
+// span when the list page wraps it in a view anchor, so the anchor does
+// not break the field's edit mode.
+func TestNewFieldWithViewAnchor(t *testing.T) {
+	value := js.Global.Get("Object").New()
+	value.Set("textContent", "linked title")
+	element := js.Global.Get("Object").New()
+	element.Set("querySelector", js.MakeFunc(func(this *js.Object, args []*js.Object) any {
+		if args[0].String() == ".sf-value" {
+			return value
+		}
+		return (*js.Object)(nil)
+	}))
+	element.Set("getAttribute", js.MakeFunc(func(this *js.Object, args []*js.Object) any {
+		switch args[0].String() {
+		case "data-note-id":
+			return 7
+		case "data-field":
+			return "title"
+		}
+		return nil
+	}))
+	f := NewField(element)
+	if got := f.value.Get("textContent").String(); got != "linked title" {
+		t.Errorf("value textContent = %q; want %q", got, "linked title")
+	}
+	if f.noteID != 7 {
+		t.Errorf("noteID = %d; want 7", f.noteID)
+	}
+	if f.name != "title" {
+		t.Errorf("name = %q; want %q", f.name, "title")
+	}
+}
+
 // TestApplyResponse verifies that the update response decodes and
 // updates the field's displayed value, then exits edit mode.
 func TestApplyResponse(t *testing.T) {
