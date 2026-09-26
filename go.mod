@@ -6,7 +6,7 @@ require (
 	codeberg.org/morelj/gorm-sqlite-libsql v1.6.0
 	github.com/a-h/templ v0.3.1020
 	github.com/gin-gonic/gin v1.12.0
-	github.com/gopherjs/gopherjs v1.21.0
+	github.com/gopherjs/gopherjs v1.21.1-0.20260727145006-490705b1d6fc
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/tursodatabase/libsql-client-go v0.0.0-20260528064733-9d5d30a29a60
 	gorm.io/gorm v1.31.2

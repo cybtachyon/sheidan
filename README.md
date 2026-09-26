@@ -1,8 +1,10 @@
-Sheidan is a framework for building modern web apps in golang.
+# Sheidan
 
-It's open-source and designed for building to an insane scale insanely quick. Dream a thing and start building, refactoring as you go.
-
-The full stack is written in golang, with front-end components transpiled to JavaScript in a Vue-like MVVC progressive web app pattern.
+Sheidan is a Go web framework built on Gin, Templ, and GORM. The full
+stack is written in Go. Front-end components are Go compiled to
+JavaScript by GopherJS, following an MVVM pattern: a Go model (GORM), a
+view model (routing and data-binding), and a view (templ templates plus
+GopherJS observation).
 
 ## Usage
 
@@ -26,22 +28,22 @@ func main() {
 }
 ```
 
-`New` creates a Gin engine preconfigured for a Sheidan app. `Wrap` adapts a templ component to a Gin handler. See [test/hello](test/hello) for a complete example.
+`New` creates a preconfigured Gin engine, and `Wrap` adapts a templ
+component to a Gin handler. See [test/hello](test/hello) for a complete
+example.
 
-# @todo Rewrite this README. Design notes:
+## Web client
 
-- Decoupled front-end built around [Templ](https://github.com/a-h/templ) templates with components transpiled with (GopherJS)[https://github.com/gopherjs/gopherjs].
-  - Render idempotent components server or client-side.
-  - Clean division between Model (Go + GORM Backend), ViewModel (Data-binding with Controllers, Routing, Mapping), and View (Templates & Observation Rendering Logic).
-- Built on [Gin](https://github.com/gin-gonic/gin).
-- Treats [Turso](https://github.com/tursodatabase/turso) as a first-class database.
-- Uses [GORM](https://gorm.io/) SQLite driver for database interactions.
-- Includes plug-ins for [DCDC](https://github.com/cybtachyon/DCDC) as an artisan CLI for all tasks.
-  - Storybook-like Templ component development.
-  - Seeding sample data for testing and validation.
-  - Common tasks like database migrations.
-  - Live reload via [Go Air](https://github.com/air-verse/air)
-- Pre-built DCDC starter kits for everything from custom enterprise management apps to homelab tooling.
+A Sheidan app's front-end is a GopherJS client: a Go module compiled to a
+single JavaScript file that the app serves to the browser. The build is
+self-bootstrapping. Running the app provisions the GopherJS toolchain on
+first use and transpiles the client, so the whole flow is `go get` +
+import + `go run`. First run takes a few minutes; later runs are instant.
+Front-end developers can transpile the client alone with `sheidan web`, a
+fast transpile-only build.
 
-## References
-- https://github.com/a-h/templ/tree/main/examples/integration-gin
+## Database
+
+Sheidan uses the GORM SQLite driver and treats [Turso](https://turso.tech)
+as a first-class database. `db.Open` handles local (`file:`) and remote
+(`libsql://`, `http(s)://`, `ws(s)://`) DSNs.

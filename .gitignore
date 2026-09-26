@@ -30,6 +30,9 @@ go.work.sum
 # Local development database
 data/
 
+# GopherJS build output for the demo app's web client
+/web/
+
 # env file
 .env
 

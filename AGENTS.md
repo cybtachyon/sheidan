@@ -3,9 +3,12 @@
 - It is loosely inspired by [Laravel](https://laravel.com/framework/docs/structure)
 
 ## Layout
-- The root package is the public framework API (package sheidan): New, Wrap, and Bind. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app is in cmd/sheidan.
+- The root package is the public framework API (package sheidan): New, Wrap, and Bind. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app and its CLI are in cmd/sheidan.
+- cmd/sheidan is the demo app and its CLI. With no argument it serves the demo app; the web subcommand transpiles the GopherJS client, and test-web runs the client's tests. It installs as the sheidan command.
+- cmd/sheidan/web is a nested GopherJS client module (go 1.21, the version GopherJS 1.21.0 requires). The root's ./... patterns skip it.
+- webbuild/ is the self-bootstrapping GopherJS toolchain, reusable by any app with a GopherJS client. Build(dir, out) transpiles the client in dir to out, provisioning a Go 1.21 SDK (in the user cache) and a gopherjs CLI on first use. Test(dir) runs the client's tests.
 - test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory.
-- tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory.
+- tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory. The gopherjs pin tracks master, not a release, to watch for modern-GOROOT support.
 
 ## Dev Tips
 - Compare your knowledge snapshot of dependencies to the current version of dependencies. e.g.,
@@ -20,6 +23,7 @@
 ## Tooling
 - templ: The CLI version must match the templ library version in go.mod. The CLI is pinned in mise.toml via the `go:` backend. Run `templ generate` after editing a `.templ` file, and commit the generated `*_templ.go` files. String interpolation uses `{ expr }`. The `@` prefix is for element expressions like `@list()`, not strings. Imports in a `.templ` file go after the `package` line; they are emitted as Go code nodes.
 - DCDC: A Rust CLI, not a Go module, and not in the standard mise/aqua registry. Install it via its install script or a local mise plugin.
+- GopherJS: The compiler requires a Go 1.21 GOROOT, and the CLI must be built with Go 1.21-1.26 (a CLI built with 1.27+ panics when compiling the js package). webbuild bootstraps this automatically: when the user's Go is not 1.21 it downloads the Go 1.21.13 SDK to the user cache dir, builds the gopherjs CLI with the user's Go (1.21-1.26) or the SDK's Go (1.27+), and transpiles. The transpiled output web/web.js is gitignored; the demo app serves it at /web/web.js. The gopherjs pin in tools.go tracks master; if a future release accepts a modern GOROOT, the SDK download disappears and the setup collapses to `go install github.com/gopherjs/gopherjs@vX`.
 - The gorm sqlite driver is cgo (mattn/go-sqlite3).
 - GORM: `db.Open` handles `file:` (local) and `libsql://`, `http(s)://`, `ws(s)://` (remote) DSNs via the morelj/gorm-sqlite-libsql driver, a fork of the official GORM SQLite driver. `ErrRecordNotFound` is a sentinel error; check it with `errors.Is`, which also matches errors GORM wraps with `%w`.
 - The libsql driver rejects query parameters in the DSN. Pass the auth token with `db.WithAuthToken`.
