@@ -8,7 +8,8 @@
 - cmd/sheidan/web is a nested GopherJS client module (go 1.21, the version GopherJS 1.21.0 requires). The root's ./... patterns skip it.
 - webbuild/ is the self-bootstrapping GopherJS toolchain, reusable by any app with a GopherJS client. Build(dir, out) transpiles the client in dir to out, provisioning a Go 1.21 SDK (in the user cache) and a gopherjs CLI on first use. Test(dir) runs the client's tests.
 - test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory.
-- tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory. The gopherjs pin tracks master, not a release, to watch for modern-GOROOT support.
+- cmd/sheidan/web is a nested GopherJS client module (go 1.21, the version GopherJS 1.21.0 requires). The root's ./... patterns skip it. Build with `make web`, test with `make test-web`.
+- tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory.
 
 ## Dev Tips
 - Compare your knowledge snapshot of dependencies to the current version of dependencies. e.g.,
@@ -18,6 +19,7 @@
 - When implementing, do not rely on memory. Instead, look up the tool's documentation for the version being implemented or use online resources to ensure accuracy and reliability.
 - Read structs and types before calling with the `codegraph` tool e.g., `codegraph node structName`.
 - Use unit tests to answer questions, verify code, and test functionality.
+- GopherJS client code: the js package (v1.21.0) has no js.Value interface; use *js.Object. The stdlib http client rejects relative URLs, so resolve paths against location.origin. Under Node, Go 1.21 disables the fetch transport (go.dev/issue/57613) and the net package is a fake network, so HTTP requests only complete in a real browser; test response handling separately.
 - Do not put secrets or personal data in content files.
 
 ## Tooling
