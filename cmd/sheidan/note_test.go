@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -41,6 +42,7 @@ func newNoteServer(t *testing.T, name string) (*gin.Engine, *gorm.DB, models.Not
 	}
 	engine := gin.New()
 	engine.GET("/notes", listNotes(database))
+	engine.POST("/notes", createNote(database))
 	engine.PATCH("/note/:id", updateNote(database))
 	return engine, database, note
 }
@@ -101,6 +103,58 @@ func TestUpdateNote(t *testing.T) {
 	engine.ServeHTTP(w, request)
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("PATCH /note/1 malformed status = %d; want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+// TestCreateNote verifies that createNote stores a new note from a JSON
+// body, responds with status 201 and the created note, and leaves the
+// new note in the list. This is the contract the web client's new-note
+// form relies on: it posts the title and body, expects status 201, and
+// reloads the page to show the created note. A malformed body responds
+// with status 400.
+func TestCreateNote(t *testing.T) {
+	engine, database, _ := newNoteServer(t, "create-note")
+
+	// Valid body: status 201 with the created note, including the
+	// generated ID. The keys match the canonical JSON the client's
+	// payload builds and the server's responses use.
+	request := httptest.NewRequest(http.MethodPost, "/notes", strings.NewReader(`{"Title":"Created","Body":"By the form"}`))
+	request.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("POST /notes status = %d; want %d", w.Code, http.StatusCreated)
+	}
+	var created models.Note
+	if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil {
+		t.Fatalf("Unmarshal error = %v", err)
+	}
+	if created.ID == 0 {
+		t.Errorf("created.ID = 0; want a generated ID")
+	}
+	if created.Title != "Created" || created.Body != "By the form" {
+		t.Errorf("created = %+v; want Title %q, Body %q", created, "Created", "By the form")
+	}
+
+	// The new note is persisted and appears in the list.
+	var notes []models.Note
+	if err := database.Find(&notes).Error; err != nil {
+		t.Fatalf("Find error = %v", err)
+	}
+	if len(notes) != 2 {
+		t.Fatalf("len(notes) = %d; want 2", len(notes))
+	}
+
+	// Malformed body: status 400 with a JSON error body.
+	request = httptest.NewRequest(http.MethodPost, "/notes", strings.NewReader(`not json`))
+	request.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("POST /notes malformed status = %d; want %d", w.Code, http.StatusBadRequest)
+	}
+	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
+		t.Errorf("400 Content-Type = %q; want it to contain %q", got, "application/json")
 	}
 }
 

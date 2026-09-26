@@ -36,9 +36,7 @@ func NewField(element *js.Object) *Field {
 
 // init appends the edit controls to the field's element and wires up
 // their event handlers.
-func (f *Field) init() {
-	doc := js.Global.Get("document")
-
+func (f *Field) init(doc *js.Object) {
 	edit := doc.Call("createElement", "button")
 	edit.Set("className", "sf-edit")
 	edit.Set("textContent", "✏️")
@@ -97,7 +95,7 @@ func (f *Field) submit() {
 	}
 	body, err := json.Marshal(map[string]string{f.name: value})
 	if err != nil {
-		f.logError(err)
+		logError(err)
 		return
 	}
 	// The http client rejects relative URLs, so the path is resolved
@@ -105,22 +103,22 @@ func (f *Field) submit() {
 	url := pageOrigin() + fmt.Sprintf("/note/%d", f.noteID)
 	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(body))
 	if err != nil {
-		f.logError(err)
+		logError(err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		f.logError(err)
+		logError(err)
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		f.logError(fmt.Errorf("update /note/%d: status %d", f.noteID, resp.StatusCode))
+		logError(fmt.Errorf("update /note/%d: status %d", f.noteID, resp.StatusCode))
 		return
 	}
 	if err := f.applyResponse(resp.Body); err != nil {
-		f.logError(err)
+		logError(err)
 	}
 }
 
@@ -149,6 +147,6 @@ func pageOrigin() string {
 }
 
 // logError reports an error to the browser console.
-func (f *Field) logError(err error) {
+func logError(err error) {
 	js.Global.Get("console").Call("error", err.Error())
 }

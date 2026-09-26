@@ -1,10 +1,11 @@
 // The sheidan command is the Sheidan demo app and its web toolchain.
 // With no argument it serves the demo app: a templ-rendered home page,
 // a notes list that content-negotiates between the NotesView page and
-// JSON, a note page rendered through the Bind data-binding layer with
-// GopherJS-transpiled editable fields, and a note update endpoint, all
-// backed by GORM. The web subcommand transpiles the GopherJS web
-// client, and test-web runs the web client's tests.
+// JSON, a note page rendered through the Bind data-binding layer,
+// GopherJS-transpiled editable fields and a new-note form on the notes
+// list page, and note create and update endpoints, all backed by GORM.
+// The web subcommand transpiles the GopherJS web client, and test-web
+// runs the web client's tests.
 package main
 
 import (
