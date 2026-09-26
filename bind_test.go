@@ -2,6 +2,7 @@ package sheidan_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,8 +24,9 @@ type bindNote struct {
 }
 
 // TestBind verifies that Bind loads the model from the database and
-// renders the templ component with it, and that it responds with status
-// 500 when the load fails.
+// renders the templ component with it, that it responds with status 404
+// when the model is missing, and that it responds with status 500 when
+// the load fails with another error.
 func TestBind(t *testing.T) {
 	database, err := db.Open("file::memory:?cache=shared")
 	if err != nil {
@@ -45,6 +47,11 @@ func TestBind(t *testing.T) {
 	}
 
 	load := func(c *gin.Context) (bindNote, error) {
+		// The "boom" id fails the load with a plain error, so the
+		// handler responds with status 500.
+		if c.Param("id") == "boom" {
+			return bindNote{}, errors.New("boom")
+		}
 		var got bindNote
 		if err := database.First(&got, c.Param("id")).Error; err != nil {
 			return bindNote{}, err
@@ -76,15 +83,34 @@ func TestBind(t *testing.T) {
 		t.Errorf("body = %q; want it to contain %q", w.Body.String(), "<h1>Hello</h1>")
 	}
 
-	// Error path: a missing note is a load error, so the handler
-	// responds with status 500 and a JSON error body.
+	// Missing path: a note with no row is GORM's ErrRecordNotFound, so
+	// the handler responds with status 404 and a JSON error body.
 	request = httptest.NewRequest(http.MethodGet, "/note/999999", nil)
 	w = httptest.NewRecorder()
 	engine.ServeHTTP(w, request)
-	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("GET /note/999999 status = %d; want %d", w.Code, http.StatusInternalServerError)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("GET /note/999999 status = %d; want %d", w.Code, http.StatusNotFound)
 	}
 	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
-		t.Errorf("error Content-Type = %q; want it to contain %q", got, "application/json")
+		t.Errorf("404 Content-Type = %q; want it to contain %q", got, "application/json")
+	}
+	if !strings.Contains(w.Body.String(), "record not found") {
+		t.Errorf("404 body = %q; want it to contain %q", w.Body.String(), "record not found")
+	}
+
+	// Failure path: a load error other than ErrRecordNotFound is a
+	// server error, so the handler responds with status 500 and a JSON
+	// error body.
+	request = httptest.NewRequest(http.MethodGet, "/note/boom", nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("GET /note/boom status = %d; want %d", w.Code, http.StatusInternalServerError)
+	}
+	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
+		t.Errorf("500 Content-Type = %q; want it to contain %q", got, "application/json")
+	}
+	if !strings.Contains(w.Body.String(), "boom") {
+		t.Errorf("500 body = %q; want it to contain %q", w.Body.String(), "boom")
 	}
 }
