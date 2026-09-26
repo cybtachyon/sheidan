@@ -3,7 +3,7 @@
 - It is loosely inspired by [Laravel](https://laravel.com/framework/docs/structure)
 
 ## Layout
-- The root package is the public framework API (package sheidan): New and Wrap. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app is in cmd/sheidan.
+- The root package is the public framework API (package sheidan): New, Wrap, and Bind. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app is in cmd/sheidan.
 - test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory.
 - tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory.
 
@@ -18,7 +18,7 @@
 - Do not put secrets or personal data in content files.
 
 ## Tooling
-- templ: The CLI version must match the templ library version in go.mod. The CLI is pinned in mise.toml via the `go:` backend. Run `templ generate` after editing a `.templ` file, and commit the generated `*_templ.go` files.
+- templ: The CLI version must match the templ library version in go.mod. The CLI is pinned in mise.toml via the `go:` backend. Run `templ generate` after editing a `.templ` file, and commit the generated `*_templ.go` files. String interpolation uses `{ expr }`. The `@` prefix is for element expressions like `@list()`, not strings. Imports in a `.templ` file go after the `package` line; they are emitted as Go code nodes.
 - DCDC: A Rust CLI, not a Go module, and not in the standard mise/aqua registry. Install it via its install script or a local mise plugin.
 - The gorm sqlite driver is cgo (mattn/go-sqlite3).
 - GORM: `db.Open` handles `file:` (local) and `libsql://`, `http(s)://`, `ws(s)://` (remote) DSNs via the morelj/gorm-sqlite-libsql driver, a fork of the official GORM SQLite driver.

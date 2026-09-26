@@ -1,0 +1,1 @@
+Refine the error handling of the Bind function in the sheidan package: map GORM's ErrRecordNotFound to HTTP 404, and map all other load errors to HTTP 500. A missing resource is a 404, not a 500, so this makes Bind more useful for real routes. Update the Bind test to cover both status codes.

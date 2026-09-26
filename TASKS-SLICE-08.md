@@ -1,0 +1,1 @@
+Take a first pass at adding the GopherJS transpilation process. Scope the demo implementation to a single Editable Field component, that on hover shows edit buttons for the Note model Title and Body, and on click changes them to a text field with a "✔️" submit button to update the value via ORM.
