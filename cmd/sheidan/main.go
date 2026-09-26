@@ -1,9 +1,10 @@
 // The sheidan command is the Sheidan demo app and its web toolchain.
 // With no argument it serves the demo app: a templ-rendered home page,
-// a notes JSON API, a note page rendered through the Bind data-binding
-// layer with GopherJS-transpiled editable fields, and a note update
-// endpoint, all backed by GORM. The web subcommand transpiles the
-// GopherJS web client, and test-web runs the web client's tests.
+// a notes list that content-negotiates between the NotesView page and
+// JSON, a note page rendered through the Bind data-binding layer with
+// GopherJS-transpiled editable fields, and a note update endpoint, all
+// backed by GORM. The web subcommand transpiles the GopherJS web
+// client, and test-web runs the web client's tests.
 package main
 
 import (
@@ -11,6 +12,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/cybtachyon/sheidan"
 	"github.com/cybtachyon/sheidan/db"
@@ -101,7 +103,11 @@ func runApp() {
 	}
 }
 
-// listNotes returns all notes as JSON.
+// listNotes returns all notes, content-negotiating the representation.
+// A request whose Accept header names text/html gets the NotesView
+// list page, and every other request gets JSON. Browsers send
+// text/html, and API clients usually do not, so the default
+// representation stays JSON.
 func listNotes(database *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var notes []models.Note
@@ -109,8 +115,24 @@ func listNotes(database *gorm.DB) gin.HandlerFunc {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
+		if wantsHTML(c) {
+			sheidan.Wrap(NotesView(notes))(c)
+			return
+		}
 		c.JSON(200, notes)
 	}
+}
+
+// wantsHTML reports whether the request's Accept header names
+// text/html.
+func wantsHTML(c *gin.Context) bool {
+	for _, part := range strings.Split(c.GetHeader("Accept"), ",") {
+		mediaType := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
+		if mediaType == "text/html" {
+			return true
+		}
+	}
+	return false
 }
 
 // createNote stores a new note from a JSON body and returns it.

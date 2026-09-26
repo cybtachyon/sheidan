@@ -1,0 +1,26 @@
+package main
+
+import "github.com/cybtachyon/sheidan/internal/models"
+
+// NotesView renders the notes list page: each note's title and body as
+// an sf-field editable field, so the GopherJS client makes them inline
+// editable.
+templ NotesView(notes []models.Note) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Notes</title>
+			@FieldStyles()
+		</head>
+		<body>
+			<h1>Notes</h1>
+			for _, note := range notes {
+				<h2 class="sf-field" data-note-id={ note.ID } data-field="title"><span class="sf-value">{ note.Title }</span></h2>
+				<p class="sf-field" data-note-id={ note.ID } data-field="body"><span class="sf-value">{ note.Body }</span></p>
+			}
+			<script src="/web/web.js"></script>
+		</body>
+	</html>
+}

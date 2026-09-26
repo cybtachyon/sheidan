@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,11 +17,12 @@ import (
 
 // newNoteServer builds the demo app's note routes around an in-memory
 // database with one note, and returns the engine, the database, and
-// the note.
-func newNoteServer(t *testing.T) (*gin.Engine, *gorm.DB, models.Note) {
+// the note. name names the in-memory database, so each test gets its
+// own.
+func newNoteServer(t *testing.T, name string) (*gin.Engine, *gorm.DB, models.Note) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	database, err := db.Open("file::memory:?cache=shared")
+	database, err := db.Open(fmt.Sprintf("file:%s?mode=memory&cache=shared", name))
 	if err != nil {
 		t.Fatalf("Open error = %v", err)
 	}
@@ -38,6 +40,7 @@ func newNoteServer(t *testing.T) (*gin.Engine, *gorm.DB, models.Note) {
 		t.Fatalf("Create error = %v", err)
 	}
 	engine := gin.New()
+	engine.GET("/notes", listNotes(database))
 	engine.PATCH("/note/:id", updateNote(database))
 	return engine, database, note
 }
@@ -46,7 +49,7 @@ func newNoteServer(t *testing.T) (*gin.Engine, *gorm.DB, models.Note) {
 // through GORM, leaves absent fields unchanged, and responds with
 // status 404 for a missing note and status 400 for a malformed body.
 func TestUpdateNote(t *testing.T) {
-	engine, database, note := newNoteServer(t)
+	engine, database, note := newNoteServer(t, "update-note")
 
 	// Title only: the body is left unchanged.
 	request := httptest.NewRequest(http.MethodPatch, "/note/1", strings.NewReader(`{"title":"Goodbye"}`))
