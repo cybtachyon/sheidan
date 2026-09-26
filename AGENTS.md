@@ -21,7 +21,7 @@
 - templ: The CLI version must match the templ library version in go.mod. The CLI is pinned in mise.toml via the `go:` backend. Run `templ generate` after editing a `.templ` file, and commit the generated `*_templ.go` files. String interpolation uses `{ expr }`. The `@` prefix is for element expressions like `@list()`, not strings. Imports in a `.templ` file go after the `package` line; they are emitted as Go code nodes.
 - DCDC: A Rust CLI, not a Go module, and not in the standard mise/aqua registry. Install it via its install script or a local mise plugin.
 - The gorm sqlite driver is cgo (mattn/go-sqlite3).
-- GORM: `db.Open` handles `file:` (local) and `libsql://`, `http(s)://`, `ws(s)://` (remote) DSNs via the morelj/gorm-sqlite-libsql driver, a fork of the official GORM SQLite driver.
+- GORM: `db.Open` handles `file:` (local) and `libsql://`, `http(s)://`, `ws(s)://` (remote) DSNs via the morelj/gorm-sqlite-libsql driver, a fork of the official GORM SQLite driver. `ErrRecordNotFound` is a sentinel error; check it with `errors.Is`, which also matches errors GORM wraps with `%w`.
 - The libsql driver rejects query parameters in the DSN. Pass the auth token with `db.WithAuthToken`.
 
 # Code Style
