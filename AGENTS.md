@@ -2,9 +2,14 @@
 - This is a golang web framework based on Gin, Templ, and GopherJS.
 - It is loosely inspired by [Laravel](https://laravel.com/framework/docs/structure)
 
+## Layout
+- The root package is the public framework API (package sheidan). The demo app is in cmd/sheidan.
+- test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory.
+- tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory.
+
 ## Dev Tips
 - Compare your knowledge snapshot of dependencies to the current version of dependencies. e.g.,
-    - No hard examples yet, we'll add them as we go.
+    - Before wrapping templ and gin types, verify the signatures of `templ.Handler`, `templ.Component`, and `gin.WrapH` in the module cache at the exact versions in go.mod.
 - Follow Go conventions: [Effective Go](https://go.dev/doc/effective_go), [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments), and [Go Proverbs](https://go-proverbs.github.io/). Fetch all of these pages before writing code. Be concise, declarative, and factual.
 - Query the codebase using the `codegraph` tool. Prefer using existing API and programming patterns over implementing new code.
 - When implementing, do not rely on memory. Instead, look up the tool's documentation for the version being implemented or use online resources to ensure accuracy and reliability.
