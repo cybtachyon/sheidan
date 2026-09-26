@@ -1,2 +1,2 @@
-- Slices 01-02 done: project scaffolding (README, AGENTS), fetched the stack deps (gin, templ, gorm, gorm/sqlite, libsql/turso, gopherjs), and a verified gin+templ Hello World build (go build/vet/staticcheck/test + curl). Dev tools (air, templ, gopherjs) pinned in mise.toml.
-- Next (slice 03): database layer, GORM + SQLite/Turso driver, a sample model, and a unit test.
+- Slices 01-03 done: project scaffolding (README, AGENTS); verified gin+templ Hello World build; GORM database layer in internal/db (file: local via mattn, libsql:// / http(s) / ws(s) remote via libsql-client-go, morelj driver), sample Note model in internal/models, 4 passing unit tests, /notes JSON route on the demo server. Dev tools (air, templ, gopherjs) pinned in mise.toml.
+- Next (slice 04): a test project that uses this go mod to build a basic Hello World web app.
