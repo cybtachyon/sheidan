@@ -1,23 +1,20 @@
 package main
 
-import "github.com/cybtachyon/sheidan/internal/models"
-
-// NoteView renders the note detail page: a back link to the notes list,
-// and the note's title and body as sf-field editable fields, so the
-// GopherJS client makes them inline editable.
-templ NoteView(note models.Note) {
+// NoteDetailShell renders the note detail page as a reactive shell: an
+// empty app container and the GopherJS client. The client reads the
+// note ID from its path, fetches the note, and renders the back link,
+// the title and body, and the delete button, re-rendering on each
+// mutation.
+templ NoteDetailShell() {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>{ note.Title }</title>
-			@FieldStyles()
+			<title>Note</title>
 		</head>
 		<body>
-			<p><a href="/notes">Back to notes</a></p>
-			<h1 class="sf-field" data-note-id={ note.ID } data-field="title"><span class="sf-value">{ note.Title }</span></h1>
-			<p class="sf-field" data-note-id={ note.ID } data-field="body"><span class="sf-value">{ note.Body }</span></p>
+			<div id="app"></div>
 			<script src="/web/web.js"></script>
 		</body>
 	</html>

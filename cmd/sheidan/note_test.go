@@ -43,6 +43,7 @@ func newNoteServer(t *testing.T, name string) (*gin.Engine, *gorm.DB, models.Not
 	engine := gin.New()
 	engine.GET("/notes", listNotes(database))
 	engine.POST("/notes", createNote(database))
+	engine.GET("/note/:id", showNote(database))
 	engine.PATCH("/note/:id", updateNote(database))
 	engine.DELETE("/note/:id", deleteNote(database))
 	return engine, database, note
@@ -214,24 +215,85 @@ func TestDeleteNote(t *testing.T) {
 	}
 }
 
-// TestNoteView verifies that the note page links back to the notes
-// list, marks its title and body as editable fields, and loads the
-// GopherJS client.
-func TestNoteView(t *testing.T) {
+// TestNoteDetailShell verifies that the detail page is a reactive
+// shell: it has an empty app container and loads the GopherJS client,
+// which reads the note ID from its path and renders the note.
+func TestNoteDetailShell(t *testing.T) {
 	var buf bytes.Buffer
-	err := NoteView(models.Note{ID: 7, Title: "Hello", Body: "World"}).Render(context.Background(), &buf)
+	err := NoteDetailShell().Render(context.Background(), &buf)
 	if err != nil {
 		t.Fatalf("Render error = %v", err)
 	}
 	body := buf.String()
 	for _, want := range []string{
-		`<p><a href="/notes">Back to notes</a></p>`,
-		`<h1 class="sf-field" data-note-id="7" data-field="title"><span class="sf-value">Hello</span></h1>`,
-		`<p class="sf-field" data-note-id="7" data-field="body"><span class="sf-value">World</span></p>`,
+		`<div id="app"></div>`,
 		`<script src="/web/web.js"></script>`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("body = %q; want it to contain %q", body, want)
 		}
+	}
+}
+
+// TestShowNote verifies that /note/:id content-negotiates: a request
+// that names text/html in its Accept header gets the reactive detail
+// shell, and every other request gets the note as JSON. A missing note
+// responds with status 404, and a malformed ID with status 400, for
+// either representation.
+func TestShowNote(t *testing.T) {
+	engine, _, note := newNoteServer(t, "show-note")
+
+	// HTML: a browser's Accept header.
+	request := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/note/%d", note.ID), nil)
+	request.Header.Set("Accept", "text/html")
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET /note/%d (html) status = %d; want %d", note.ID, w.Code, http.StatusOK)
+	}
+	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "text/html") {
+		t.Errorf("html Content-Type = %q; want it to contain %q", got, "text/html")
+	}
+	for _, want := range []string{
+		`<div id="app"></div>`,
+		`<script src="/web/web.js"></script>`,
+	} {
+		if !strings.Contains(w.Body.String(), want) {
+			t.Errorf("html body = %q; want it to contain %q", w.Body.String(), want)
+		}
+	}
+
+	// JSON: no Accept header, the default for API clients.
+	request = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/note/%d", note.ID), nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET /note/%d (json) status = %d; want %d", note.ID, w.Code, http.StatusOK)
+	}
+	if got := w.Header().Get("Content-Type"); !strings.Contains(got, "application/json") {
+		t.Errorf("json Content-Type = %q; want it to contain %q", got, "application/json")
+	}
+	var got models.Note
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("Unmarshal error = %v", err)
+	}
+	if got.ID != note.ID || got.Title != note.Title || got.Body != note.Body {
+		t.Errorf("note = %+v; want ID %d, Title %q, Body %q", got, note.ID, note.Title, note.Body)
+	}
+
+	// Missing note: status 404 for the JSON representation.
+	request = httptest.NewRequest(http.MethodGet, "/note/999999", nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("GET /note/999999 (json) status = %d; want %d", w.Code, http.StatusNotFound)
+	}
+
+	// Malformed ID: status 400.
+	request = httptest.NewRequest(http.MethodGet, "/note/notanumber", nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, request)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("GET /note/notanumber status = %d; want %d", w.Code, http.StatusBadRequest)
 	}
 }

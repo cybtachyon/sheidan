@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,28 +12,18 @@ import (
 	"github.com/cybtachyon/sheidan/internal/models"
 )
 
-// TestNotesView verifies that the list page links each note's title to
-// its detail page, marks each note's title and body as editable fields,
-// includes the shared field styles, and loads the GopherJS client.
-func TestNotesView(t *testing.T) {
+// TestNoteListShell verifies that the list page is a reactive shell:
+// it has an empty app container and loads the GopherJS client, which
+// fetches the notes and renders the list.
+func TestNoteListShell(t *testing.T) {
 	var buf bytes.Buffer
-	notes := []models.Note{
-		{ID: 1, Title: "First", Body: "One"},
-		{ID: 2, Title: "Second", Body: "Two"},
-	}
-	err := NotesView(notes).Render(context.Background(), &buf)
+	err := NoteListShell().Render(context.Background(), &buf)
 	if err != nil {
 		t.Fatalf("Render error = %v", err)
 	}
 	body := buf.String()
 	for _, want := range []string{
-		`<h1>Notes</h1>`,
-		`<h2 class="sf-field" data-note-id="1" data-field="title"><a class="sf-view" href="/note/1"><span class="sf-value">First</span></a></h2>`,
-		`<p class="sf-field" data-note-id="1" data-field="body"><span class="sf-value">One</span></p>`,
-		`<h2 class="sf-field" data-note-id="2" data-field="title"><a class="sf-view" href="/note/2"><span class="sf-value">Second</span></a></h2>`,
-		`<p class="sf-field" data-note-id="2" data-field="body"><span class="sf-value">Two</span></p>`,
-		`.sf-field .sf-edit { display: none; margin-left: 0.5em; }`,
-		`.sf-view { color: inherit; text-decoration: none; }`,
+		`<div id="app"></div>`,
 		`<script src="/web/web.js"></script>`,
 	} {
 		if !strings.Contains(body, want) {
@@ -61,7 +50,7 @@ func TestListNotes(t *testing.T) {
 		t.Errorf("html Content-Type = %q; want it to contain %q", got, "text/html")
 	}
 	for _, want := range []string{
-		fmt.Sprintf(`<h2 class="sf-field" data-note-id="%d" data-field="title"><a class="sf-view" href="/note/%d">`, note.ID, note.ID),
+		`<div id="app"></div>`,
 		`<script src="/web/web.js"></script>`,
 	} {
 		if !strings.Contains(w.Body.String(), want) {

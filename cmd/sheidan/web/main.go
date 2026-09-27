@@ -1,27 +1,21 @@
 // The web program is the demo app's browser client. The GopherJS
 // compiler transpiles it to JavaScript, and the demo app serves the
-// output at /web/web.js. On the notes list page it makes each note's
-// fields inline editable, builds the new-note form, and adds a delete
-// button to each note.
+// output at /web/web.js.
 package main
 
-import (
-	"github.com/gopherjs/gopherjs/js"
-)
+import "github.com/gopherjs/gopherjs/js"
 
-// main initializes the notes list page: it builds the new-note form,
-// makes each note's fields inline editable, and adds a delete button to
-// each note. It runs when the page loads, and it is a no-op outside a
-// browser, so the same build can run under Node.js for tests.
+// main boots the reactive app when the page has its app container,
+// and is a no-op otherwise, so the transpiled build can run under
+// Node.js for tests.
 func main() {
 	doc := js.Global.Get("document")
-	if doc == js.Undefined {
+	if doc == nil || doc == js.Undefined {
 		return
 	}
-	installNewNoteForm(doc)
-	list := doc.Call("querySelectorAll", "[data-field]")
-	for i := 0; i < list.Length(); i++ {
-		NewField(list.Index(i)).init(doc)
+	container := doc.Call("querySelector", "#app")
+	if container == nil {
+		return
 	}
-	installDeleteButtons(doc)
+	NewApp(doc, container).run()
 }

@@ -1,10 +1,10 @@
 // The sheidan command is the Sheidan demo app and its web toolchain.
-// With no argument it serves the demo app: a templ-rendered home page,
-// a notes list that content-negotiates between the NotesView page and
-// JSON, a note page rendered through the Bind data-binding layer,
-// GopherJS-transpiled editable fields, a new-note form, and a delete
-// button on the notes list page, and note create, update, and delete
-// endpoints, all backed by GORM.
+// With no argument it serves the demo app: a templ-rendered home
+// page, a reactive notes list and note detail page rendered by the
+// GopherJS client, and note create, update, and delete endpoints, all
+// backed by GORM. The list and detail pages content-negotiate between
+// the reactive shell and JSON, so a browser gets the shell and an API
+// client gets JSON.
 // The web subcommand transpiles the GopherJS web client, and test-web
 // runs the web client's tests.
 package main
@@ -108,19 +108,19 @@ func runApp() {
 }
 
 // listNotes returns all notes, content-negotiating the representation.
-// A request whose Accept header names text/html gets the NotesView
-// list page, and every other request gets JSON. Browsers send
+// A request whose Accept header names text/html gets the reactive list
+// shell, and every other request gets the notes as JSON. Browsers send
 // text/html, and API clients usually do not, so the default
 // representation stays JSON.
 func listNotes(database *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if wantsHTML(c) {
+			sheidan.Wrap(NoteListShell())(c)
+			return
+		}
 		var notes []models.Note
 		if err := database.Find(&notes).Error; err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		if wantsHTML(c) {
-			sheidan.Wrap(NotesView(notes))(c)
 			return
 		}
 		c.JSON(200, notes)
@@ -155,23 +155,34 @@ func createNote(database *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// showNote loads a note by its route parameter and renders it with the
-// NoteView templ component, demonstrating the Bind data-binding layer.
+// showNote returns a note by its route parameter, content-negotiating
+// the representation. A request whose Accept header names text/html
+// gets the reactive detail shell, and every other request gets the
+// note as JSON. A missing note responds with status 404, a malformed
+// ID with status 400, and other errors with status 500, for either
+// representation.
 func showNote(database *gorm.DB) gin.HandlerFunc {
-	return sheidan.Bind(
-		func(c *gin.Context) (models.Note, error) {
-			id, err := strconv.Atoi(c.Param("id"))
-			if err != nil {
-				return models.Note{}, err
+	return func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		var note models.Note
+		if err := database.First(&note, id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(404, gin.H{"error": err.Error()})
+				return
 			}
-			var note models.Note
-			if err := database.First(&note, id).Error; err != nil {
-				return models.Note{}, err
-			}
-			return note, nil
-		},
-		NoteView,
-	)
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		if wantsHTML(c) {
+			sheidan.Wrap(NoteDetailShell())(c)
+			return
+		}
+		c.JSON(200, note)
+	}
 }
 
 // updateNote updates a note's title and/or body from a JSON body,
