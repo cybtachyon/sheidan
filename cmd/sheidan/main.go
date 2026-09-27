@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/cybtachyon/sheidan/db"
 	"github.com/cybtachyon/sheidan/internal/models"
 	"github.com/cybtachyon/sheidan/webbuild"
+	ginpprof "github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -68,6 +70,13 @@ Usage:
   sheidan web        transpile the GopherJS web client
   sheidan test-web   run the web client's tests
   sheidan help       show this help
+
+Environment:
+  SHEIDAN_DB             the GORM data source name (default file:./data/scheidan.db)
+  SHEIDAN_DEBUG=1        mount the pprof routes under /debug/pprof
+                         (feed them to go tool pprof, e.g.:
+                          go tool pprof http://HOST:8080/debug/pprof/heap)
+  SHEIDAN_DEBUG_TOKEN    bearer token guarding the pprof group
 `)
 }
 
@@ -92,6 +101,18 @@ func runApp() {
 		log.Fatal(err)
 	}
 
+	engine := newDemoEngine(database)
+	if err := engine.Run(":8080"); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// newDemoEngine wires the demo's routes onto a fresh engine, plus the
+// environment-driven debug facility: when SHEIDAN_DEBUG is 1, the
+// pprof routes mount beneath /debug/pprof, optionally gated by a
+// bearer token drawn from SHEIDAN_DEBUG_TOKEN. Left unset, the group
+// never mounts and its paths answer 404.
+func newDemoEngine(database *gorm.DB) *gin.Engine {
 	engine := sheidan.New()
 	engine.GET("/", sheidan.Wrap(Home()))
 	engine.GET("/notes", listNotes(database))
@@ -102,9 +123,29 @@ func runApp() {
 	// The GopherJS build output of the web client, produced by the
 	// bootstrap above.
 	engine.StaticFile("/web/web.js", "./web/web.js")
-	if err := engine.Run(":8080"); err != nil {
-		log.Fatal(err)
+	if os.Getenv("SHEIDAN_DEBUG") == "1" {
+		attachPprof(engine)
 	}
+	return engine
+}
+
+// attachPprof mounts the standard pprof route family on a dedicated
+// group, so it travels beside the default chain instead of joining it.
+// A nonzero SHEIDAN_DEBUG_TOKEN switches the group to strict bearer
+// authentication, protecting the profiles from casual probing.
+func attachPprof(engine *gin.Engine) {
+	group := engine.Group("/debug")
+	token := os.Getenv("SHEIDAN_DEBUG_TOKEN")
+	if token != "" {
+		group.Use(func(c *gin.Context) {
+			if c.GetHeader("Authorization") != "Bearer "+token {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			c.Next()
+		})
+	}
+	ginpprof.RouteRegister(group, "pprof")
 }
 
 // listNotes returns all notes, content-negotiating the representation.
