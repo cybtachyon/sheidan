@@ -86,8 +86,8 @@ func TestMaintenanceEnvFlip(t *testing.T) {
 		t.Errorf("Retry-After = %q; want 7", got)
 	}
 	var body struct {
-		Error      string `json:"error"`
-		RetrySecs  int    `json:"retry_seconds"`
+		Error     string `json:"error"`
+		RetrySecs int    `json:"retry_seconds"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("body = %q: %v", rec.Body.String(), err)

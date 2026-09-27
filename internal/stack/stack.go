@@ -98,7 +98,7 @@ var Specs = []SlotSpec{
 	{Name: RespCompress, Ordinal: 5, Kind: Wrapper},
 	{Name: RespCookiefinalize, Ordinal: 6, Kind: Wrapper},
 	{Name: ApiCors, Ordinal: 7, Kind: Guard, Factory: newCors, Accept: acceptsCorsParams},
-	{Name: IntakePostsize, Ordinal: 8, Kind: Guard},
+	{Name: IntakePostsize, Ordinal: 8, Kind: Guard, Factory: newPostSize, Accept: acceptsPostSizeParams},
 	{Name: IntakeReqHeaders, Ordinal: 9, Kind: Guard},
 	{Name: IntakeStringTrim, Ordinal: 10, Kind: Transform},
 	{Name: SessionRestore, Ordinal: 11, Kind: State},

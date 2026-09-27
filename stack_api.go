@@ -122,5 +122,6 @@ type (
 	SlogParams        = stack.SlogParams
 	MaintenanceParams = stack.MaintenanceParams
 	BadTargetParams   = stack.BadTargetParams
+	PostSizeParams    = stack.PostSizeParams
 	CorsOptions       = ccors.Config
 )
