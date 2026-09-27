@@ -120,4 +120,5 @@ type (
 	RequestIDParams   = stack.RequestIDParams
 	SlogParams        = stack.SlogParams
 	MaintenanceParams = stack.MaintenanceParams
+	BadTargetParams   = stack.BadTargetParams
 )
