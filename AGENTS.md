@@ -27,6 +27,7 @@
 - The gorm sqlite driver is cgo (mattn/go-sqlite3).
 - GORM: `db.Open` handles `file:` (local) and `libsql://`, `http(s)://`, `ws(s)://` (remote) DSNs via the morelj/gorm-sqlite-libsql driver, a fork of the official GORM SQLite driver. `ErrRecordNotFound` is a sentinel error; check it with `errors.Is`, which also matches errors GORM wraps with `%w`.
 - The libsql driver rejects query parameters in the DSN. Pass the auth token with `db.WithAuthToken`.
+- .refs/ holds offline mirrors of gin-contrib module sources and distilled README notes for middleware work; distill.sh regenerates the distillation.
 
 # Code Style
 - Use a declarative and explicit coding style. Ensure single sources of truth and use language mechanics for deterministic behavior. Use tools like Structs, Receiver Functions, and Interfaces if they fit the problem.

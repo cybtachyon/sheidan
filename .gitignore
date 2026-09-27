@@ -39,3 +39,4 @@ data/
 # Editor/IDE
 .idea/
 .vscode/
+.refs/
