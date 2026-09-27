@@ -11,13 +11,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// New creates a Gin engine preconfigured for a Sheidan app: Logger
-// and Recovery middleware, and trusted proxy parsing disabled, so
-// ClientIP reports the direct peer address.
+// New creates a Gin engine preconfigured for a Sheidan app: the
+// default middleware chain assembled behind the recovery middleware,
+// with trusted proxy parsing disabled so ClientIP reports the direct
+// peer address. Adjust the chain for a bespoke engine through Stack.
 func New() *gin.Engine {
-	engine := gin.Default()
-	// A nil list returns without an error, so the discard is safe.
-	_ = engine.SetTrustedProxies(nil)
+	engine, err := Stack().Apply()
+	if err != nil {
+		// The stock chain cannot fault; reaching here is a defect
+		// in this package, not a caller mistake.
+		panic(err)
+	}
 	return engine
 }
 
