@@ -3,16 +3,16 @@
 - It is loosely inspired by [Laravel](https://laravel.com/framework/docs/structure)
 
 ## Layout
-- The root package is the public framework API (package sheidan): New, Wrap, and Bind. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app and its CLI are in cmd/sheidan.
-- cmd/sheidan is the demo app and its CLI. With no argument it serves the demo app; the web subcommand transpiles the GopherJS client, and test-web runs the client's tests. It installs as the sheidan command.
+- The root package is the public framework API (package sheidan): New, Wrap, Bind, Stack, and Chain. The db/ package is the public GORM connection layer (Open, WithAuthToken). The demo app and its CLI are in cmd/sheidan.
+- cmd/sheidan is the demo app and its CLI. With no argument it serves the demo app; the web subcommand transpiles the GopherJS client, and test-web runs the client's tests. It installs as the sheidan command. Setting SHEIDAN_DEBUG=1 mounts the pprof routes under /debug/pprof, and SHEIDAN_DEBUG_TOKEN bears a credential guard for them.
 - webbuild/ is the self-bootstrapping GopherJS toolchain, reusable by any app with a GopherJS client. Build(dir, out) transpiles the client in dir to out, provisioning a Go 1.21 SDK (in the user cache) and a gopherjs CLI on first use. Test(dir) runs the client's tests.
-- test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory.
+- test/hello is a nested module with its own go.mod (replace ../..). The root's ./... patterns skip it. Run its vet, staticcheck, and tests from its directory. Parent dependency bumps ride the replace into the nested module's resolution; run go mod tidy inside it afterward so its sums track the raised floor.
+- internal/stack carries the default middleware chain: twenty-one named slots, each with a lane derived from the name prefix, a fixed ordinal, and a kind. Builders shape chains, reject malformed operations at compile time, and assemble engines led by a guarded recovery. Per-group filtered copies serve routers that drop individual slots.
 - cmd/sheidan/web is a nested GopherJS client module (go 1.21, the version GopherJS 1.21.0 requires). The root's ./... patterns skip it. Build with `make web`, test with `make test-web`.
 - tools.go pins tool dependencies for go mod tidy. Its tools build tag excludes it from normal builds, so it coexists with the root package in one directory.
 
 ## Dev Tips
-- Compare your knowledge snapshot of dependencies to the current version of dependencies. e.g.,
-    - Before wrapping templ and gin types, verify the signatures of `templ.Handler`, `templ.Component`, and `gin.WrapH` in the module cache at the exact versions in go.mod.
+- Verify dependency APIs against the exact versions in go.mod before trusting recalled signatures, e.g. templ.Handler, templ.Component, and gin.WrapH wrappers checked in the module cache.
 - Follow Go conventions: [Effective Go](https://go.dev/doc/effective_go), [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments), and [Go Proverbs](https://go-proverbs.github.io/). Fetch all of these pages before writing code. Be concise, declarative, and factual.
 - Query the codebase using the `codegraph` tool, e.g., `codegraph node structName` to read a type before calling it. Prefer using existing API and programming patterns over implementing new code.
 - When implementing, do not rely on memory. Instead, look up the tool's documentation for the version being implemented or use online resources to ensure accuracy and reliability.
@@ -28,6 +28,7 @@
 - GORM: `db.Open` handles `file:` (local) and `libsql://`, `http(s)://`, `ws(s)://` (remote) DSNs via the morelj/gorm-sqlite-libsql driver, a fork of the official GORM SQLite driver. `ErrRecordNotFound` is a sentinel error; check it with `errors.Is`, which also matches errors GORM wraps with `%w`.
 - The libsql driver rejects query parameters in the DSN. Pass the auth token with `db.WithAuthToken`.
 - .refs/ holds offline mirrors of gin-contrib module sources and distilled README notes for middleware work; distill.sh regenerates the distillation.
+- Gin v1.12 moved Recovery to a package-level function (there is no engine method) and made engine.Handlers a field rather than a method. gin-contrib/slog exports the package name slog, so import it under an alias to dodge the collision with log/slog. Its WithSkipPath matches the path and query exactly, so subtree skipping prefers WithSkipPathRegexps, and WithHiddenRequestHeaders replaces the builtin list, so callers pass the union. gin-contrib/requestid parks its header key in a package global that each New resets; keeping the default key steady prevents collisions across concurrently built engines. A panic unwinds through any middleware closer to the handler than the catcher, so recording a crash demands the recovery sit outside the logging slot, which the guarded recovery honors.
 
 # Code Style
 - Use a declarative and explicit coding style. Ensure single sources of truth and use language mechanics for deterministic behavior. Use tools like Structs, Receiver Functions, and Interfaces if they fit the problem.
