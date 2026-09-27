@@ -177,6 +177,9 @@ func relink(el *js.Object) {
 }
 
 // fakeAppend appends child to el, detaching it from any current parent.
+// When a text child joins a textarea, the element's value is
+// rederived from its text children, mirroring how a browser
+// initializes a textarea's value from its content.
 func fakeAppend(el, child *js.Object) *js.Object {
 	fakeOps++
 	if p := child.Get("parentNode"); p != nil {
@@ -184,8 +187,24 @@ func fakeAppend(el, child *js.Object) *js.Object {
 	}
 	el.Get("children").Call("push", child)
 	child.Set("parentNode", el)
+	if el.Get("tagName").String() == "textarea" && child.Get("tagName").String() == "" {
+		el.Set("value", fakeTextView(el))
+	}
 	relink(el)
 	return child
+}
+
+// fakeTextView joins the data of el's text children.
+func fakeTextView(el *js.Object) string {
+	out := ""
+	kids := el.Get("children")
+	for i := 0; i < kids.Get("length").Int(); i++ {
+		kid := kids.Index(i)
+		if kid.Get("tagName").String() == "" {
+			out += kid.Get("nodeValue").String()
+		}
+	}
+	return out
 }
 
 // fakeInsertBefore inserts child into el before ref, or appends it when

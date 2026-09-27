@@ -368,3 +368,136 @@ func TestAppDetailLoadError(t *testing.T) {
 		t.Errorf("heading = %q; want Note not found", got)
 	}
 }
+
+// TestAppEditMultilineBody verifies the body edit flow end to end: the
+// body edits in a textarea prefilled with the current value, the
+// typed text survives innocuous re-renders and concurrent store
+// mutations, and saving round-trips the newlines to the server and
+// back into the display.
+func TestAppEditMultilineBody(t *testing.T) {
+	const seeded = "line one\nline two"
+	typed := "line one\nline two\nline three"
+	server := newTestServer(Note{ID: 1, Title: "t", Body: seeded})
+	app, container, flush := newTestApp(t, "/notes", server)
+	app.run()
+	flush()
+
+	row := container.Get("children").Index(2).Get("children").Index(0)
+	bodyRow := row.Get("children").Index(1)
+	fakeClick(bodyRow.Get("children").Index(1))
+	flush()
+
+	bodyRow = row.Get("children").Index(1)
+	if got := fakeChildTags(bodyRow); len(got) != 3 || got[0] != "textarea" || got[1] != "button" || got[2] != "button" {
+		t.Fatalf("edit mode children = %v; want [textarea button button]", got)
+	}
+	ta := bodyRow.Get("children").Index(0)
+	if got := ta.Get("value").String(); got != seeded {
+		t.Fatalf("textarea value = %q; want %q (prefilled)", got, seeded)
+	}
+
+	ta.Set("value", typed)
+	app.page.schedule()
+	flush()
+	ta = row.Get("children").Index(1).Get("children").Index(0)
+	if got := ta.Get("value").String(); got != typed {
+		t.Fatalf("value after an innocuous re-render = %q; want %q", got, typed)
+	}
+
+	app.store.Upsert(Note{ID: 2, Title: "other", Body: "x"})
+	flush()
+	ta = row.Get("children").Index(1).Get("children").Index(0)
+	if got := ta.Get("value").String(); got != typed {
+		t.Fatalf("value after a concurrent store mutation = %q; want %q", got, typed)
+	}
+
+	fakeClick(bodyRow.Get("children").Index(1))
+	flush()
+
+	if got := server.notes[1].Body; got != typed {
+		t.Errorf("server body = %q; want %q (newlines must round-trip)", got, typed)
+	}
+	bodyRow = row.Get("children").Index(1)
+	if got := fakeChildTags(bodyRow); len(got) != 2 || got[1] != "button" {
+		t.Fatalf("display mode children = %v; want [text button]", got)
+	}
+	if got := bodyRow.Get("children").Index(0).Get("nodeValue").String(); got != typed {
+		t.Errorf("displayed body = %q; want %q", got, typed)
+	}
+}
+
+// TestAppNewNoteMultilineBody verifies that the new-note form's body is
+// a textarea, that a body with newlines can be entered, created, and
+// re-rendered, and that the form clears afterwards.
+func TestAppNewNoteMultilineBody(t *testing.T) {
+	const body = "l1\nl2"
+	server := newTestServer()
+	app, container, flush := newTestApp(t, "/notes", server)
+	app.run()
+	flush()
+
+	form := container.Get("children").Index(1)
+	bodyEl := form.Call("querySelector", ".sf-new-body")
+	if got := bodyEl.Get("tagName").String(); got != "textarea" {
+		t.Fatalf("body control tag = %q; want textarea", got)
+	}
+	titleEl := form.Call("querySelector", ".sf-new-title")
+	titleEl.Set("value", "multi")
+	bodyEl.Set("value", body)
+	fakeEmit(form, "submit", fakeEvent(form))
+	flush()
+
+	row := container.Get("children").Index(2).Get("children").Index(0)
+	link := row.Get("children").Index(0).Get("children").Index(0)
+	if got := link.Get("children").Index(0).Get("nodeValue").String(); got != "multi" {
+		t.Errorf("new note title = %q; want multi", got)
+	}
+	displayed := row.Get("children").Index(1).Get("children").Index(0).Get("nodeValue").String()
+	if displayed != body {
+		t.Errorf("displayed body = %q; want %q", displayed, body)
+	}
+	if got := server.notes[1].Body; got != body {
+		t.Errorf("server body = %q; want %q", got, body)
+	}
+	if got := bodyEl.Get("value").String(); got != "" {
+		t.Errorf("body control after add = %q; want empty", got)
+	}
+}
+
+// TestAppEditBodyFollowsStoreWhileUntouched verifies that a store
+// update flowing into an opened body editor rewrites the textarea while
+// the user has not typed, and that saving from that state persists the
+// store's value.
+func TestAppEditBodyFollowsStoreWhileUntouched(t *testing.T) {
+	server := newTestServer(Note{ID: 1, Title: "t", Body: "original"})
+	app, container, flush := newTestApp(t, "/notes", server)
+	app.run()
+	flush()
+
+	row := container.Get("children").Index(2).Get("children").Index(0)
+	bodyRow := row.Get("children").Index(1)
+	fakeClick(bodyRow.Get("children").Index(1))
+	flush()
+
+	bodyRow = row.Get("children").Index(1)
+	ta := bodyRow.Get("children").Index(0)
+	if got := ta.Get("value").String(); got != "original" {
+		t.Fatalf("opened value = %q; want original", got)
+	}
+
+	app.store.Upsert(Note{ID: 1, Title: "t", Body: "synced"})
+	flush()
+	ta = row.Get("children").Index(1).Get("children").Index(0)
+	if got := ta.Get("value").String(); got != "synced" {
+		t.Fatalf("value after an untouched store update = %q; want synced", got)
+	}
+	if got := ta.Get("children").Index(0).Get("nodeValue").String(); got != "synced" {
+		t.Errorf("text child = %q; want synced", got)
+	}
+
+	fakeClick(bodyRow.Get("children").Index(1))
+	flush()
+	if got := server.notes[1].Body; got != "synced" {
+		t.Errorf("server body = %q; want synced", got)
+	}
+}

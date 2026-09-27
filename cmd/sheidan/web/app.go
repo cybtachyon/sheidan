@@ -273,7 +273,7 @@ func (a *App) listBodyRow(note Note) *VNode {
 	if a.isEditing(note.ID, "body") {
 		return a.editRow("p", note, "body")
 	}
-	return El("p", nil, Text(note.Body), a.editButton(note.ID, "body"))
+	return El("p", []Attr{{Name: "class", Value: "sf-body"}}, Text(note.Body), a.editButton(note.ID, "body"))
 }
 
 // renderDetail renders the note detail page: a back link, the note's
@@ -331,7 +331,7 @@ func (a *App) detailBodyRow(note Note) *VNode {
 	if a.isEditing(note.ID, "body") {
 		return a.editRow("p", note, "body")
 	}
-	return El("p", nil, Text(note.Body), a.editButton(note.ID, "body"))
+	return El("p", []Attr{{Name: "class", Value: "sf-body"}}, Text(note.Body), a.editButton(note.ID, "body"))
 }
 
 // detailDeleteButton renders the detail page's delete button.
@@ -344,27 +344,10 @@ func (a *App) detailDeleteButton(note Note) *VNode {
 	return btn
 }
 
-// editRow renders a note field in edit mode: a text input prefilled
-// with the current value, and save and cancel buttons. The value is
-// read from the real element at submit time, so a re-render never
-// clobbers what the user has typed.
+// editRow renders a note field in edit mode and the save and cancel
+// buttons beside it. The value is read from the real element at submit
+// time, so a re-render never clobbers what the user has typed.
 func (a *App) editRow(tag string, note Note, field string) *VNode {
-	value := note.Title
-	if field == "body" {
-		value = note.Body
-	}
-	input := El("input", []Attr{
-		{Name: "class", Value: "sf-input"},
-		{Name: "type", Value: "text"},
-		{Name: "value", Value: value},
-	})
-	// Enter in the input saves, like a form.
-	WithEvents(input, Event{Name: "keydown", Fn: js.MakeFunc(func(this *js.Object, args []*js.Object) any {
-		if args[0].Get("key").String() == "Enter" {
-			a.saveField(note.ID, field, this.Get("value").String())
-		}
-		return nil
-	})})
 	save := El("button", []Attr{{Name: "class", Value: "sf-save"}}, Text("Save"))
 	WithEvents(save, Event{Name: "click", Fn: js.MakeFunc(func(this *js.Object, args []*js.Object) any {
 		a.saveField(note.ID, field, this.Get("previousElementSibling").Get("value").String())
@@ -375,7 +358,31 @@ func (a *App) editRow(tag string, note Note, field string) *VNode {
 		a.setEditing(note.ID, field, false)
 		return nil
 	})})
-	return El(tag, nil, input, save, cancel)
+	return El(tag, nil, a.fieldControl(note, field), save, cancel)
+}
+
+// fieldControl builds the control for editing a note field. The title
+// control is a single-line input; Enter in it saves, like a form. The
+// body control is a textarea seeded with the current body; Enter in a
+// textarea inserts a line break, so the body saves through the save
+// button alone.
+func (a *App) fieldControl(note Note, field string) *VNode {
+	if field == "body" {
+		return TextArea([]Attr{{Name: "class", Value: "sf-input"}}, note.Body)
+	}
+	input := El("input", []Attr{
+		{Name: "class", Value: "sf-input"},
+		{Name: "type", Value: "text"},
+		{Name: "value", Value: note.Title},
+	})
+	// Enter in the input saves, like a form.
+	WithEvents(input, Event{Name: "keydown", Fn: js.MakeFunc(func(this *js.Object, args []*js.Object) any {
+		if args[0].Get("key").String() == "Enter" {
+			a.saveField(note.ID, field, this.Get("value").String())
+		}
+		return nil
+	})})
+	return input
 }
 
 // editButton renders the button that switches a note field into edit
@@ -399,7 +406,7 @@ func (a *App) deleteButton(noteID int) *VNode {
 	return btn
 }
 
-// newNoteForm renders the new-note form: a title input, a body input,
+// newNoteForm renders the new-note form: a title input, a body textarea,
 // and an add button. Submitting posts the note to the create endpoint.
 func (a *App) newNoteForm() *VNode {
 	title := El("input", []Attr{
@@ -407,9 +414,11 @@ func (a *App) newNoteForm() *VNode {
 		{Name: "type", Value: "text"},
 		{Name: "placeholder", Value: "Title"},
 	})
-	body := El("input", []Attr{
+	// The body is a textarea without a seed child: the form's content
+	// is scratch, it never projects store state, so a re-render cannot
+	// touch what the user has typed.
+	body := El("textarea", []Attr{
 		{Name: "class", Value: "sf-new-body"},
-		{Name: "type", Value: "text"},
 		{Name: "placeholder", Value: "Body"},
 	})
 	add := El("button", []Attr{
@@ -443,7 +452,8 @@ const appStyles = `.sf-note { margin: 0 0 1em; }
 .sf-note .sf-edit, .sf-note .sf-delete { display: none; margin-left: 0.5em; }
 .sf-note:hover .sf-edit, .sf-note:hover .sf-delete { display: inline-block; }
 .sf-note .sf-input { font: inherit; }
+.sf-body { white-space: pre-wrap; overflow-wrap: break-word; }
 .sf-note .sf-save, .sf-note .sf-cancel { margin-left: 0.25em; }
 .sf-new-note { margin: 0 0 1em; }
-.sf-new-note input { font: inherit; padding: 0.25em 0.5em; margin-right: 0.5em; }
+.sf-new-note input, .sf-new-note textarea { font: inherit; padding: 0.25em 0.5em; margin-right: 0.5em; height: 3em; vertical-align: top; }
 .sf-new-note button { font: inherit; padding: 0.25em 0.75em; }`

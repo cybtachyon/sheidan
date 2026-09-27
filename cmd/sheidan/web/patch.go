@@ -1,6 +1,10 @@
 package main
 
-import "github.com/gopherjs/gopherjs/js"
+import (
+	"strings"
+
+	"github.com/gopherjs/gopherjs/js"
+)
 
 // mount creates the real DOM tree for v and returns the root node. It is
 // used for the initial render and for nodes that reconciliation adds.
@@ -56,15 +60,47 @@ func patchChild(doc *js.Object, old, new *VNode, parent *js.Object) *js.Object {
 	}
 	new.node = old.node
 	if old.Tag == "" {
-		if old.Text != new.Text {
-			old.node.Set("nodeValue", new.Text)
-		}
+		updateTextChild(old, new)
 		return old.node
 	}
 	patchAttrs(old, new)
 	patchEvents(old, new)
 	patchChildren(doc, old.Children, new.Children, old.node)
 	return old.node
+}
+
+// updateTextChild brings the real text node up to date with new. Plain
+// text writes the node's value directly. A textarea's content is its
+// value property, so the write targets the element, and only while the
+// value still equals the seed we last supplied: a store change must not
+// clobber text the user has typed. The new node always records the
+// seed it presents, so the next patch judges taint against the current
+// store value.
+func updateTextChild(old, new *VNode) {
+	if old.Text == new.Text {
+		new.lastSeeded = old.lastSeeded
+		return
+	}
+	p := textareaParent(old.node)
+	if p == nil {
+		old.node.Set("nodeValue", new.Text)
+		return
+	}
+	if p.Get("value").String() == old.lastSeeded {
+		p.Set("value", new.Text)
+		old.node.Set("nodeValue", new.Text)
+	}
+	new.lastSeeded = new.Text
+}
+
+// textareaParent returns the parent element of a text node when that
+// parent is a textarea, or nil otherwise.
+func textareaParent(node *js.Object) *js.Object {
+	p := node.Get("parentNode")
+	if p == nil || !strings.EqualFold(p.Get("tagName").String(), "textarea") {
+		return nil
+	}
+	return p
 }
 
 // patchEvents replaces the real element's listeners with new's. A

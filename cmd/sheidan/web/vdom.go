@@ -23,13 +23,14 @@ type Event struct {
 // real DOM node when it moves. node holds the real DOM node the vdom node
 // is mounted to; patching sets it, and it stays nil until then.
 type VNode struct {
-	Key      string
-	Tag      string
-	Text     string
-	Attrs    []Attr
-	Children []*VNode
-	Events   []Event
-	node     *js.Object
+	Key        string
+	Tag        string
+	Text       string
+	Attrs      []Attr
+	Children   []*VNode
+	Events     []Event
+	node       *js.Object
+	lastSeeded string
 }
 
 // El builds an element vdom node with the given tag, attributes, and
@@ -55,4 +56,17 @@ func Keyed(v *VNode, key string) *VNode {
 func WithEvents(v *VNode, events ...Event) *VNode {
 	v.Events = append(v.Events, events...)
 	return v
+}
+
+// TextArea builds a textarea element vdom node whose initial content is
+// seed. A textarea's live content is its value property, and the value
+// content attribute is inert once the element is mounted, so the seed
+// rides in as a text child, which the browser copies into the value
+// when the element joins the document. lastSeeded records the same
+// string so the patch can tell an untouched control from one the user
+// has typed into.
+func TextArea(attrs []Attr, seed string) *VNode {
+	text := Text(seed)
+	text.lastSeeded = seed
+	return El("textarea", attrs, text)
 }

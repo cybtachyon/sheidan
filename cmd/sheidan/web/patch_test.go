@@ -293,3 +293,99 @@ func TestPatchEventSwap(t *testing.T) {
 		t.Errorf("calls = edit:%d save:%d; want edit:0 save:1 (the reused element must run the new handler)", editCalls, saveCalls)
 	}
 }
+
+// TestPatchKeyedRotateForward complements TestPatchKeyedReorder with a
+// rotation in the other direction: the first new child slides down, and
+// the last new child lands at the end of the parent, which the
+// reconciliation performs with an insertBefore of a null reference.
+func TestPatchKeyedRotateForward(t *testing.T) {
+	doc := fakeDocument()
+	mk := func(keys ...string) *VNode {
+		var children []*VNode
+		for _, k := range keys {
+			children = append(children, Keyed(El("li", nil, Text(k)), k))
+		}
+		return El("ul", nil, children...)
+	}
+	old := mk("a", "b", "c")
+	container, ul := mountIn(doc, old)
+	nodeA, nodeB, nodeC := ul.Get("children").Index(0), ul.Get("children").Index(1), ul.Get("children").Index(2)
+	fakeOps = 0
+	fakeCreates = 0
+
+	patchChild(doc, old, mk("b", "c", "a"), container)
+
+	if got := fakeChildTags(ul); len(got) != 3 || got[0] != "li" || got[1] != "li" || got[2] != "li" {
+		t.Fatalf("children = %v; want [li li li]", got)
+	}
+	if got := ul.Get("children").Index(0); got != nodeB {
+		t.Error("first child is not the existing node b")
+	}
+	if got := ul.Get("children").Index(1); got != nodeC {
+		t.Error("middle child is not the existing node c")
+	}
+	if got := ul.Get("children").Index(2); got != nodeA {
+		t.Error("last child is not the existing node a")
+	}
+	if creates := fakeCreatesCount(); creates != 0 {
+		t.Errorf("creates = %d; want 0 (a pure reorder mounts nothing)", creates)
+	}
+	// Two moves, each paid as a detach plus an insert; a slips into
+	// place as b and c jump, so it costs nothing.
+	if ops := fakeOpsCount(); ops != 4 {
+		t.Errorf("ops = %d; want 4 (two moves)", ops)
+	}
+}
+
+// TestPatchTextAreaAdvancesWhenUntouched verifies that a store update
+// rewrites a textarea's content while nobody has typed in it, keeping
+// the element's value and the text child in step.
+func TestPatchTextAreaAdvancesWhenUntouched(t *testing.T) {
+	doc := fakeDocument()
+	old := TextArea(nil, "seed")
+	container, _ := mountIn(doc, old)
+	ta := old.node
+	if got := ta.Get("value").String(); got != "seed" {
+		t.Fatalf("mounted value = %q; want seed", got)
+	}
+	fakeOps = 0
+
+	patchChild(doc, old, TextArea(nil, "advanced"), container)
+
+	if got := ta.Get("value").String(); got != "advanced" {
+		t.Errorf("value = %q; want advanced", got)
+	}
+	if got := ta.Get("children").Index(0).Get("nodeValue").String(); got != "advanced" {
+		t.Errorf("text child = %q; want advanced", got)
+	}
+	// The write targets the element's value property, which sits
+	// outside the counted structural operations.
+	if ops := fakeOpsCount(); ops != 0 {
+		t.Errorf("ops = %d; want 0", ops)
+	}
+}
+
+// TestPatchTextAreaKeepsTypedText verifies that a store update does not
+// clobber a textarea the user has typed into, and that the protection
+// lasts across further updates until the user's text is superseded by
+// a deliberate write.
+func TestPatchTextAreaKeepsTypedText(t *testing.T) {
+	doc := fakeDocument()
+	old := TextArea(nil, "seed")
+	container, _ := mountIn(doc, old)
+	ta := old.node
+	ta.Set("value", "typed")
+	fakeOps = 0
+
+	mid := TextArea(nil, "advanced")
+	patchChild(doc, old, mid, container)
+	later := TextArea(nil, "later")
+	patchChild(doc, mid, later, container)
+
+	if got := ta.Get("value").String(); got != "typed" {
+		t.Errorf("value = %q; want typed (the user's text must survive store updates)", got)
+	}
+	if ops := fakeOpsCount(); ops != 0 {
+		t.Errorf("ops = %d; want 0 (a protected textarea costs no writes)", ops)
+	}
+}
