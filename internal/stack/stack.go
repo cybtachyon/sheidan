@@ -93,7 +93,7 @@ const (
 var Specs = []SlotSpec{
 	{Name: RequestID, Ordinal: 1, Kind: Wrapper, Factory: newRequestID, Accept: acceptsRequestIDParams},
 	{Name: LoggingSlog, Ordinal: 2, Kind: Wrapper, Factory: newSlog, Accept: acceptsSlogParams},
-	{Name: GateMaintenance, Ordinal: 3, Kind: Guard},
+	{Name: GateMaintenance, Ordinal: 3, Kind: Guard, Factory: newMaintenance, Accept: acceptsMaintenanceParams},
 	{Name: GateBadTarget, Ordinal: 4, Kind: Guard},
 	{Name: RespCompress, Ordinal: 5, Kind: Wrapper},
 	{Name: RespCookiefinalize, Ordinal: 6, Kind: Wrapper},

@@ -117,6 +117,7 @@ func (c *ChainFilter) Handlers() ([]gin.HandlerFunc, error) {
 // internal stack's bag types, so a Stack().Configure call and the
 // slot's factory agree on one shape.
 type (
-	RequestIDParams = stack.RequestIDParams
-	SlogParams      = stack.SlogParams
+	RequestIDParams   = stack.RequestIDParams
+	SlogParams        = stack.SlogParams
+	MaintenanceParams = stack.MaintenanceParams
 )
