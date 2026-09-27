@@ -18,6 +18,7 @@ require (
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
+	github.com/gin-contrib/cors v1.7.9 // indirect
 	github.com/gin-contrib/requestid v1.0.8 // indirect
 	github.com/gin-contrib/slog v1.2.3 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
