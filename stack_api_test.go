@@ -1,6 +1,7 @@
 package sheidan
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -117,4 +118,54 @@ func TestChainRequiresABase(t *testing.T) {
 		}
 	}()
 	Chain(nil)
+}
+
+// TestChainSilencesNewIntakeSlots verifies the group exclusion list
+// silences a new intake slot for one branch while a sibling group from
+// the same base keeps it armed: a group that drops requestheaders
+// admits a fifty-five-line request, and a sibling group still rejects
+// the same flood with a 431.
+func TestChainSilencesNewIntakeSlots(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	base := New()
+	engine := gin.New()
+
+	probe := func(c *gin.Context) { c.String(http.StatusOK, "ok") }
+	api := engine.Group("/api")
+	apiHandlers, err := Chain(base).Without(IntakeReqHeaders).Handlers()
+	if err != nil {
+		t.Fatalf("api Handlers error = %v", err)
+	}
+	api.Use(apiHandlers...)
+	api.GET("/probe", probe)
+
+	public := engine.Group("/public")
+	publicHandlers, err := Chain(base).Handlers()
+	if err != nil {
+		t.Fatalf("public Handlers error = %v", err)
+	}
+	public.Use(publicHandlers...)
+	public.GET("/probe", probe)
+
+	flood := func(path string) *http.Request {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		for i := 0; i < 55; i++ {
+			req.Header.Set(fmt.Sprintf("X-Extra-%d", i), "v")
+		}
+		return req
+	}
+
+	// The api group drops the slot, so the flood sails through.
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, flood("/api/probe"))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("api (silenced) status = %d; want 200", rec.Code)
+	}
+
+	// The public group keeps the slot, so the same flood is refused.
+	rec = httptest.NewRecorder()
+	engine.ServeHTTP(rec, flood("/public/probe"))
+	if rec.Code != http.StatusRequestHeaderFieldsTooLarge {
+		t.Fatalf("public (armed) status = %d; want 431", rec.Code)
+	}
 }
