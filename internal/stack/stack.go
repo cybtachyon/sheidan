@@ -91,8 +91,8 @@ const (
 // Specs holds the canonical chain in ordinal order. It is the single
 // source of truth for every compiled engine and group filter.
 var Specs = []SlotSpec{
-	{Name: RequestID, Ordinal: 1, Kind: Wrapper},
-	{Name: LoggingSlog, Ordinal: 2, Kind: Wrapper},
+	{Name: RequestID, Ordinal: 1, Kind: Wrapper, Factory: newRequestID, Accept: acceptsRequestIDParams},
+	{Name: LoggingSlog, Ordinal: 2, Kind: Wrapper, Factory: newSlog, Accept: acceptsSlogParams},
 	{Name: GateMaintenance, Ordinal: 3, Kind: Guard},
 	{Name: GateBadTarget, Ordinal: 4, Kind: Guard},
 	{Name: RespCompress, Ordinal: 5, Kind: Wrapper},
@@ -301,16 +301,3 @@ func (b *Builder) Compile() ([]gin.HandlerFunc, error) {
 // Holder is the no-op middleware emitted for slots that have not been
 // filled yet, keeping chain length and ordering stable.
 var Holder = func(c *gin.Context) { c.Next() }
-
-// Assemble builds a Gin engine carrying the recovery middleware,
-// trusted proxy parsing disabled, and the given middleware chain in
-// order. It is the single assembly point for sheidan.New and the
-// Stack builder.
-func Assemble(handlers []gin.HandlerFunc) *gin.Engine {
-	engine := gin.New()
-	// A nil list returns without an error, so the discard is safe.
-	_ = engine.SetTrustedProxies(nil)
-	all := append([]gin.HandlerFunc{gin.Recovery()}, handlers...)
-	engine.Use(all...)
-	return engine
-}

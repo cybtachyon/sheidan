@@ -70,16 +70,14 @@ func (s *StackBuilder) Remove(name string) { s.builder.Remove(name) }
 // compiled order.
 func (s *StackBuilder) Views() []stack.View { return s.builder.Views() }
 
-// Apply compiles the chain into a Gin engine: Recovery leads the
-// slots, trusted proxy parsing stays disabled, and the slots run in
-// canonical order. Compilation refuses the build when an operation
-// named an unknown slot or a mismatched parameter bag.
+// Apply compiles the chain into a Gin engine: a guarded recovery
+// leads the slots, trusted proxy parsing stays disabled, and the
+// slots run in canonical order. The recovery records panics through
+// the logging slot's writer, so a crash leaves the same structured
+// trail as a graded 5xx. Compilation refuses the build when an
+// operation named an unknown slot or a mismatched parameter bag.
 func (s *StackBuilder) Apply() (*gin.Engine, error) {
-	hs, err := s.builder.Compile()
-	if err != nil {
-		return nil, err
-	}
-	return stack.Assemble(hs), nil
+	return s.builder.Assemble()
 }
 
 // ChainFilter is a per-router-group filtered copy of the default chain.
@@ -114,3 +112,11 @@ func (c *ChainFilter) Without(names ...string) *ChainFilter {
 func (c *ChainFilter) Handlers() ([]gin.HandlerFunc, error) {
 	return c.group.Handlers()
 }
+
+// Parameter bag types for the filled slots. They are aliases for the
+// internal stack's bag types, so a Stack().Configure call and the
+// slot's factory agree on one shape.
+type (
+	RequestIDParams = stack.RequestIDParams
+	SlogParams      = stack.SlogParams
+)
