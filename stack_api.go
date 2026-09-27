@@ -2,6 +2,7 @@ package sheidan
 
 import (
 	"github.com/cybtachyon/sheidan/internal/stack"
+	ccors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -121,4 +122,5 @@ type (
 	SlogParams        = stack.SlogParams
 	MaintenanceParams = stack.MaintenanceParams
 	BadTargetParams   = stack.BadTargetParams
+	CorsOptions       = ccors.Config
 )

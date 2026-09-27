@@ -97,7 +97,7 @@ var Specs = []SlotSpec{
 	{Name: GateBadTarget, Ordinal: 4, Kind: Guard, Factory: newBadTarget, Accept: acceptsBadTargetParams},
 	{Name: RespCompress, Ordinal: 5, Kind: Wrapper},
 	{Name: RespCookiefinalize, Ordinal: 6, Kind: Wrapper},
-	{Name: ApiCors, Ordinal: 7, Kind: Guard},
+	{Name: ApiCors, Ordinal: 7, Kind: Guard, Factory: newCors, Accept: acceptsCorsParams},
 	{Name: IntakePostsize, Ordinal: 8, Kind: Guard},
 	{Name: IntakeReqHeaders, Ordinal: 9, Kind: Guard},
 	{Name: IntakeStringTrim, Ordinal: 10, Kind: Transform},

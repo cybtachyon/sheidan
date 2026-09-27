@@ -5,6 +5,10 @@ go 1.27.1
 require (
 	codeberg.org/morelj/gorm-sqlite-libsql v1.6.0
 	github.com/a-h/templ v0.3.1020
+	github.com/gin-contrib/cors v1.7.9
+	github.com/gin-contrib/pprof v1.5.6
+	github.com/gin-contrib/requestid v1.0.8
+	github.com/gin-contrib/slog v1.2.3
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gopherjs/gopherjs v1.21.1-0.20260727145006-490705b1d6fc
 	github.com/mattn/go-sqlite3 v1.14.22
@@ -20,9 +24,6 @@ require (
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
-	github.com/gin-contrib/pprof v1.5.6 // indirect
-	github.com/gin-contrib/requestid v1.0.8 // indirect
-	github.com/gin-contrib/slog v1.2.3 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
